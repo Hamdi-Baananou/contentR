@@ -8,6 +8,7 @@ import nltk
 from src.data_preprocessing import load_and_update_data
 from src.feature_engineering import engineer_features
 from src.model_training import train_random_forest
+from src.recommendations import recommend_top_recipes  # <-- NEW import
 
 # Download NLTK data on first run
 nltk.download('vader_lexicon')
@@ -59,6 +60,8 @@ if st.button("Engineer Features"):
 # ========== 3. Model Training ==========
 
 st.header("3. Train Random Forest Model")
+model = None  # Global placeholder to store the trained model
+
 if st.button("Train Model"):
     # Load the processed data
     data = pd.read_csv("data/processed_combined_data.csv")
@@ -83,3 +86,21 @@ if st.button("Train Model"):
     st.pyplot(fig)
 
     st.success("Model training complete!")
+
+# ========== 5. Generate Recommendations ==========
+
+st.header("5. Generate Top Recommended Recipes")
+if st.button("Generate Recommendations"):
+    # We need our trained model and the processed data
+    if model is None:
+        st.error("Please train the model first!")
+    else:
+        # Load the processed data again (optional, or keep it in memory)
+        data = pd.read_csv("data/processed_combined_data.csv")
+
+        top_recs, data_with_preds = recommend_top_recipes(data, model, top_n=10)
+
+        st.subheader("Top Recommended Recipes:")
+        st.write(top_recs[['id', 'message', 'engagement_rate', 'predicted_performance']])
+
+        st.success("Recommendations generated! Check your console logs or CSV for details.")
