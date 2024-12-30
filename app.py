@@ -6,7 +6,7 @@ import nltk
 
 from src.data_preprocessing import load_and_update_data
 from src.feature_engineering import engineer_features
-from src.model_training import train_random_forest
+from src.model_training import train_random_forest, train_xgboost  # Import both training functions
 from src.recommendations import recommend_top_recipes
 
 nltk.download('vader_lexicon')
@@ -17,6 +17,9 @@ st.title("Recipe Engagement Analysis and Prediction")
 # ==================== Session State Init =====================
 if "model" not in st.session_state:
     st.session_state["model"] = None
+
+if "model_choice" not in st.session_state:
+    st.session_state["model_choice"] = "Random Forest"
 
 # ==================== 1. Data Preprocessing ====================
 st.header("1. Update Data from JSON")
@@ -50,20 +53,27 @@ if st.button("Engineer Features"):
     st.success("Data with new features saved to data/processed_combined_data.csv")
 
 # ==================== 3. Model Training ====================
-st.header("3. Train Random Forest Model")
+st.header("3. Train Model")
+model_choice = st.selectbox("Choose Model", ["Random Forest", "XGBoost"])
+
 if st.button("Train Model"):
     # Load the processed data
     data = pd.read_csv("data/processed_combined_data.csv")
-    model, X_test, y_test, y_pred = train_random_forest(data)
 
-    # Store model in session state
+    if model_choice == "Random Forest":
+        model, X_test, y_test, y_pred = train_random_forest(data)
+    elif model_choice == "XGBoost":
+        model, X_test, y_test, y_pred = train_xgboost(data)
+
+    # Store the selected model and model type in session state
     st.session_state["model"] = model
+    st.session_state["model_choice"] = model_choice
 
     # Display feature importances
-    st.subheader("Feature Importances")
+    st.subheader(f"Feature Importances ({model_choice})")
     feature_names = ['hashtags', 'emojis', 'sentiment', 'text_length', 'hour']
-    importances = model.feature_importances_
-    feature_df = pd.DataFrame({"Feature": feature_names, "Importance": importances})
+    feature_importances = model.feature_importances_
+    feature_df = pd.DataFrame({"Feature": feature_names, "Importance": feature_importances})
     feature_df.sort_values(by="Importance", ascending=False, inplace=True)
     st.dataframe(feature_df)
 
@@ -78,7 +88,7 @@ if st.button("Train Model"):
     sns.heatmap(corr_data, annot=True, cmap='coolwarm', ax=ax)
     st.pyplot(fig)
 
-    st.success("Model training complete!")
+    st.success(f"{model_choice} model training complete!")
 
 # ==================== 5. Generate Recommendations ====================
 st.header("5. Generate Top Recommended Recipes")
@@ -94,6 +104,6 @@ if st.button("Generate Recommendations"):
             top_n=10
         )
 
-        st.subheader("Top Recommended Recipes:")
+        st.subheader(f"Top Recommended Recipes ({st.session_state['model_choice']})")
         st.write(top_recs[['id', 'message', 'engagement_rate', 'predicted_performance']])
         st.success("Recommendations generated!")
