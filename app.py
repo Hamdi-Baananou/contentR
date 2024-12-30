@@ -138,6 +138,7 @@ if "top_recs" in st.session_state and st.session_state["top_recs"] is not None:
     for row_data in rows:
         cols = st.columns(num_cols)
         for col, (_, recipe) in zip(cols, row_data.iterrows()):
+
             # If you have an 'image_url' column, display the image
             if "image_url" in recipe and pd.notna(recipe["image_url"]):
                 col.image(recipe["image_url"], use_column_width=True)
@@ -151,16 +152,19 @@ if "top_recs" in st.session_state and st.session_state["top_recs"] is not None:
             # Show standard info
             col.markdown(f"**Message**: {recipe['message']}")
             
+            # Safely prepare the message for copying
+            clean_message = recipe['message'].replace("'", "\\'")
+            
             # A small JS snippet to copy text to clipboard
             copy_code = f"""
-            <script>
-            function copyToClipboard(text) {{
-                navigator.clipboard.writeText(text);
-                alert('Message copied to clipboard!');
-            }}
-            </script>
-            <button onclick="copyToClipboard('{recipe['message'].replace("'", "\\'")}')">Copy Message</button>
-            """
+<script>
+function copyToClipboard(text) {{
+    navigator.clipboard.writeText(text);
+    alert("Message copied to clipboard!");
+}}
+</script>
+<button onclick="copyToClipboard('{clean_message}')">Copy Message</button>
+"""
             col.markdown(copy_code, unsafe_allow_html=True)
             
             # Engagement metrics (if columns exist)
