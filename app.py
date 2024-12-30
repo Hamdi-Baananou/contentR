@@ -106,5 +106,5 @@ if st.button("Generate Recommendations"):
         )
 
         st.subheader(f"Top Recommended Recipes ({st.session_state['model_choice']})")
-        st.write(top_recs[['id', 'message', 'engagement_rate', 'predicted_performance']])
-        st.success("Recommendations generated!")
+        st.write(top_recs[['id', 'message', 'engagement_rate', 'predicted_performance', 'actionable_advice']])
+        st.success("Recommendations with actionable advice generated!")

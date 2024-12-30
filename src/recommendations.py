@@ -1,40 +1,57 @@
-# src/recommendations.py
 import pandas as pd
 
 def recommend_top_recipes(data, model, top_n=10):
     """
-    Uses trained model to predict performance on the entire dataset,
-    then returns top_n recommended recipes based on 'engagement_rate'.
-    Assumes data has 'engagement_rate' column and features used by the model.
+    Use the trained model to predict performance, rank posts, and provide actionable advice.
+
+    Parameters:
+        data (DataFrame): Processed dataset containing features and labels.
+        model: Trained ML model for predicting performance.
+        top_n (int): Number of top-performing posts to recommend.
+
+    Returns:
+        top_recommendations (DataFrame): Top recommended posts with actionable advice.
+        data (DataFrame): Updated dataset with predicted performance.
     """
     features = ['hashtags', 'emojis', 'sentiment', 'text_length', 'hour']
     X = data[features]
     predicted_performance = model.predict(X)
     data['predicted_performance'] = predicted_performance
 
+    # Filter and sort top-performing posts
     top_recommendations = (
         data[data['predicted_performance'] == 1]
         .sort_values(by='engagement_rate', ascending=False)
         .head(top_n)
     )
 
-    # Print for logging
-    print("Top Recommended Recipes:")
-    for idx, recipe in top_recommendations.iterrows():
-        print("\nRecommended Recipe:")
-        print("Message:", recipe['message'])
-        print("Hashtags:", recipe['hashtags'])
-        print("Emojis:", recipe['emojis'])
-        print("Sentiment:", recipe['sentiment'])
-        print("Text Length:", recipe['text_length'])
-        print("Hour:", recipe['hour'])
-        print("Day of Week:", recipe['day_of_week'])
-        if 'writing_recommendations' in data.columns:
-            rec = recipe['writing_recommendations']
-            print("Recommendation:", rec.get('recommendation', 'No recommendation.'))
+    # Generate actionable advice
+    def generate_advice(row):
+        advice = []
 
-    # Save final CSV with predictions
+        # Check hashtags
+        if row['hashtags'] < 3:
+            advice.append("Consider adding more relevant hashtags (3 or more).")
+
+        # Check sentiment
+        if row['sentiment'] < 0:
+            advice.append("Try using more positive language to engage your audience.")
+
+        # Check text length
+        if row['text_length'] < 20:
+            advice.append("Expand the post text to provide more context and detail.")
+
+        # Check posting time
+        if row['hour'] < 8 or row['hour'] > 20:
+            advice.append("Consider posting during peak engagement hours (8 AM to 8 PM).")
+
+        # Combine all advice
+        return " ".join(advice)
+
+    # Apply advice generation to each top recommendation
+    top_recommendations['actionable_advice'] = top_recommendations.apply(generate_advice, axis=1)
+
+    # Save predictions to a CSV file
     data.to_csv('processed_combined_data_with_predictions.csv', index=False)
-    print("Model recommendations have been generated and saved.")
 
     return top_recommendations, data
