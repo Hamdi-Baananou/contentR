@@ -55,15 +55,16 @@ if st.button("Engineer Features"):
 # ==================== 3. Model Training ====================
 st.header("3. Train Model")
 model_choice = st.selectbox("Choose Model", ["Random Forest", "XGBoost"])
+use_tuning = st.checkbox("Enable Hyperparameter Tuning", value=False)
 
 if st.button("Train Model"):
     # Load the processed data
     data = pd.read_csv("data/processed_combined_data.csv")
 
     if model_choice == "Random Forest":
-        model, X_test, y_test, y_pred = train_random_forest(data)
+        model, X_test, y_test, y_pred = train_random_forest(data, use_tuning=use_tuning)
     elif model_choice == "XGBoost":
-        model, X_test, y_test, y_pred = train_xgboost(data)
+        model, X_test, y_test, y_pred = train_xgboost(data, use_tuning=use_tuning)
 
     # Store the selected model and model type in session state
     st.session_state["model"] = model
@@ -88,7 +89,7 @@ if st.button("Train Model"):
     sns.heatmap(corr_data, annot=True, cmap='coolwarm', ax=ax)
     st.pyplot(fig)
 
-    st.success(f"{model_choice} model training complete!")
+    st.success(f"{model_choice} model training {'with tuning' if use_tuning else ''} complete!")
 
 # ==================== 5. Generate Recommendations ====================
 st.header("5. Generate Top Recommended Recipes")
